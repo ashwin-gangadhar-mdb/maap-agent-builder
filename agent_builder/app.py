@@ -3,9 +3,12 @@ import os
 import uuid
 import logging
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
+load_dotenv()
 
-from mdb_agent_builder.yaml_loader import load_application
-from mdb_agent_builder.utils.logging_config import get_logger
+# Fix imports to use local imports instead of package imports
+from agent_builder.yaml_loader import load_application
+from agent_builder.utils.logging_config import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -72,6 +75,11 @@ class AgentApp:
                 if not data or "message" not in data:
                     return jsonify({"error": "Missing required field: message"}), 400
                 
+                if not data or "config" not in data:
+                    return jsonify({"error": "Missing required field: config"}), 400
+                else:
+                    config = data["config"]
+                    del data["config"]  # Remove config from the main data
                 user_message = data["message"]
                 logger.info(f"Received chat request with message: {user_message[:50]}...")
                 
@@ -91,7 +99,7 @@ class AgentApp:
                             input_data[key] = value
                     
                     # Invoke the agent
-                    response = self.agent.invoke(input_data)
+                    response = self.agent.invoke(input_data, config=config)
                     
                     # Process agent response
                     if isinstance(response, dict) and "messages" in response:

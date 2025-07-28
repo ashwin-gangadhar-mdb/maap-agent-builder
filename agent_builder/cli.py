@@ -4,8 +4,8 @@ import os
 import sys
 import logging
 
-from mdb_agent_builder.app import AgentApp
-from mdb_agent_builder.utils.logging_config import get_logger, configure_logging
+from agent_builder.app import AgentApp
+from agent_builder.utils.logging_config import get_logger, configure_logging
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -23,12 +23,15 @@ def main():
     server_parser.add_argument("--debug", "-d", action="store_true", help="Run in debug mode")
     server_parser.add_argument("--log-level", "-l", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                               default="INFO", help="Set the logging level")
+    server_parser.add_argument("--env-file", "-e", help="Path to a .env file to load environment variables")
     
     # Parse arguments
     args = parser.parse_args()
     
     # Configure logging based on command-line arguments
-    configure_logging(level=getattr(logging, args.log_level) if hasattr(args, "log_level") else logging.INFO)
+    # Pass the string log level directly, not the numeric value
+    log_level = args.log_level if hasattr(args, "log_level") else "INFO"
+    configure_logging(level=log_level)
     
     # Execute the command
     if not args.command:
@@ -38,6 +41,10 @@ def main():
     if args.command == "serve":
         try:
             logger.info(f"Starting agent server with configuration: {args.config}")
+            if args.env_file:
+                from dotenv import load_dotenv
+                load_dotenv(args.env_file)
+                logger.info(f"Loaded environment variables from {args.env_file}")
             agent_app = AgentApp(args.config)
             agent_app.run(host=args.host, port=args.port, debug=args.debug)
         except Exception as e:

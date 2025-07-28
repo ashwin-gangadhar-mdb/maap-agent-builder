@@ -1,6 +1,6 @@
 import os
-from mdb_agent_builder.app import create_app
-from mdb_agent_builder.utils.logging_config import configure_logging
+from agent_builder.app import create_app
+from agent_builder.utils.logging_config import configure_logging
 import logging
 
 # Configure logging

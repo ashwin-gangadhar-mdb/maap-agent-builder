@@ -25,7 +25,7 @@ langchain-voyageai>=0.0.1
 
 # LangGraph
 langgraph>=0.0.20
-langgraph-checkpointer-mongodb
+langgraph-checkpoint-mongodb
 
 
 # MongoDB dependencies
@@ -39,7 +39,7 @@ sentence-transformers>=2.2.2
 openai>=1.3.0
 anthropic>=0.5.0
 cohere>=4.32
-aws-sdk>=2.0
+boto3
 fireworks-ai>=0.7.0
 voyageai>=0.1.0
 

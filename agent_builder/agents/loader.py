@@ -6,9 +6,9 @@ from dataclasses import dataclass, field
 from langchain_core.language_models import BaseLLM
 from langchain_core.tools import BaseTool
 
-from mdb_agent_builder.agents.agent_gen import AgentType, AgentFactory
-from mdb_agent_builder.utils.checkpointer import get_mongodb_checkpointer
-from mdb_agent_builder.utils.logging_config import get_logger
+from agent_builder.agents.agent_gen import AgentType, AgentFactory
+from agent_builder.utils.checkpointer import get_mongodb_checkpointer
+from agent_builder.utils.logging_config import get_logger
 
 """
 Agent loader for various agent types using the MAAP Agent Builder.

@@ -19,7 +19,7 @@ from langchain_fireworks import FireworksEmbeddings
 from langchain_together import TogetherEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from mdb_agent_builder.utils.logging_config import get_logger
+from agent_builder.utils.logging_config import get_logger
 
 """
 Embeddings loader for various providers using LangChain.

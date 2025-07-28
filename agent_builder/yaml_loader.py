@@ -6,12 +6,12 @@ import re
 from pipe21 import Map, Pipe
 from typing import Dict, Any, Optional, Union, List
 
-from mdb_agent_builder.utils.logging_config import get_logger
+from agent_builder.utils.logging_config import get_logger
 
-from mdb_agent_builder.embeddings.loader import load_embedding_model, load_embedding_models, EmbeddingConfig
-from mdb_agent_builder.llms.loader import load_llm, load_llms, LLMConfig
-from mdb_agent_builder.tools.loader import load_tools, ToolConfig
-from mdb_agent_builder.agents.loader import load_agent, AgentConfig
+from agent_builder.embeddings.loader import load_embedding_model, load_embedding_models, EmbeddingConfig
+from agent_builder.llms.loader import load_llm, load_llms, LLMConfig
+from agent_builder.tools.loader import load_tools, ToolConfig
+from agent_builder.agents.loader import load_agent, AgentConfig
 from copy import deepcopy
 
 # Set up module logger

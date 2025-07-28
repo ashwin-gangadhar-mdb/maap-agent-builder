@@ -13,9 +13,9 @@ from enum import Enum
 from langchain_core.language_models import BaseLLM
 from langchain_core.tools import BaseTool
 
-from mdb_agent_builder.utils.logging_config import get_logger
-from mdb_agent_builder.tools.mongodb import MongoDBTools
-from mdb_agent_builder.tools.mcp import get_mcp_tools
+from agent_builder.utils.logging_config import get_logger
+from agent_builder.tools.mongodb import MongoDBTools
+from agent_builder.tools.mcp import get_mcp_tools
 
 # Set up module logger
 logger = get_logger(__name__)

@@ -7,7 +7,7 @@ including MongoDB for persistent state.
 import logging
 from typing import Any
 
-from mdb_agent_builder.utils.logging_config import get_logger
+from agent_builder.utils.logging_config import get_logger
 from pymongo import MongoClient
 
 # Set up module logger

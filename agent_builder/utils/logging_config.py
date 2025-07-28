@@ -134,8 +134,8 @@ def get_logger(name: str) -> logging.Logger:
     # Configure default logging level from environment if not already configured
     if not logging.getLogger().handlers:
         log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
-        numeric_level = getattr(logging, log_level, logging.INFO)
-        configure_logging(level=numeric_level)
+        # Pass the string log level to configure_logging, not the numeric level
+        configure_logging(level=log_level)
     
     return logger
 

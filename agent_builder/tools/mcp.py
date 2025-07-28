@@ -11,7 +11,7 @@ import logging
 import asyncio
 from typing import Dict, Any, List, Optional, Union, Callable
 
-from mdb_agent_builder.utils.logging_config import get_logger
+from agent_builder.utils.logging_config import get_logger
 
 # Import MCP-related libraries
 try:

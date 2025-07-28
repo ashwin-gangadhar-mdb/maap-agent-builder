@@ -1,8 +1,7 @@
-version: 1.0
 
 # Configure the embedding model
 embeddings:
- - name: all-mpnet-v2
+ - name: all_mpnet_v2
    provider: huggingface
    model_name: sentence-transformers/all-mpnet-base-v2
    normalize: true
@@ -26,13 +25,26 @@ tools:
     description: Searches for relevant documents in the vector store
     connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
     namespace: amazon.products
-    embedding_model: all-mpnet-v2  # Reference to the embedding model defined above
+    embedding_model: all_mpnet_v2  # Reference to the embedding model defined above
     additional_kwargs:
       index_name: default
       embedding_field: embedding
       text_field: text
       top_k: 5
       min_score: 0.7
+      
+  # - name: mdb-mcp-toolkit
+  #   tool_type: mdb_mcp_toolkit
+  #   description: MongoDB MCP Toolkit for advanced data operations
+  #   connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
+  #   namespace: amazon.products
+  #   servers_config:
+  #     "mdb-toolkit":
+  #       "url": "http://localhost:5000/mcp/"
+  #       "transport": "streamable_http"
+  #   additional_kwargs:
+  #     index_name: default
+  
 
 # Configure checkpointing
 checkpointer:
@@ -48,4 +60,4 @@ agent:
   llm: fireworks_llm_maverick  # Reference to the LLM defined above
   tools:
     - product_recommender  # Reference to the tool defined above
-  system_prompt_path: ./prompts/rag_system_prompt.txt
+  system_prompt_path: /Users/ashwin.gangadhar/projects/maap-agent-builder/mdb_agent_builder/prompts/rag_system_prompt.txt

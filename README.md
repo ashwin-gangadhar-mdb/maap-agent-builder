@@ -13,15 +13,91 @@ MAAP Agent Builder is a modular framework that allows you to configure and deplo
 - **Stateful Conversations**: Support for conversation history and checkpointing
 - **Web API**: Built-in Flask server for easy deployment and interaction
 
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/mongo-agent-builder.git
+cd mongo-agent-builder
+
+# Set up environment and install
+make setup-env
+source .venv/bin/activate
+make install-and-config
+
+# Create an agent interactively
+make create-agent
+
+# Add a tool to your agent
+make add-tool
+
+# Run your agent
+make run
+```
+
 ## Installation
 
 Clone the repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/yourusername/maap-agent-builder.git
-cd maap-agent-builder
+git clone https://github.com/yourusername/mongo-agent-builder.git
+cd mongo-agent-builder
 pip install -e .
 ```
+
+For development, install with development dependencies:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Alternatively, use the provided Makefile:
+
+```bash
+make install      # For regular installation
+make dev          # For development installation
+```
+
+### Project Structure
+
+The project uses a modern Python packaging structure with `pyproject.toml`:
+
+- **Core Dependencies**: All main dependencies are defined in `pyproject.toml`
+- **Development Dependencies**: Available as optional extras via `[dev]`
+- **Configuration**: Tool configurations for black, isort, mypy, pytest, and ruff are included
+
+### Development Setup
+
+For a complete development environment setup:
+
+```bash
+# Create and activate a virtual environment
+make setup-env
+source .venv/bin/activate
+
+# Install the package with development dependencies
+make install
+
+# Create default configuration directories
+make create-config
+```
+
+### Agent Configuration Setup
+
+The project includes several helpful Makefile targets to create and manage agent configurations:
+
+```bash
+# Create a new agent configuration with an interactive wizard
+make create-agent
+
+# Validate an existing configuration
+make validate-config
+
+# Add a new tool to your configuration
+make add-tool
+```
+
+These commands provide interactive prompts to help you create properly structured configuration files without having to manually edit YAML.
 
 ## Configuration
 
@@ -105,6 +181,19 @@ agent:
   tools:
     - product_recommender  # Reference to the tool defined above
   system_prompt_path: ./prompts/rag_system_prompt.txt
+```
+
+You can create this configuration manually or use the provided Makefile targets:
+
+```bash
+# Create the basic configuration structure
+make create-config
+
+# Add a new agent interactively
+make create-agent  # You'll be prompted for agent name, type, LLM provider, and model
+
+# Add a new tool interactively
+make add-tool  # You'll be prompted for tool name, type, and description
 ```
 
 ## Agent Types
@@ -204,6 +293,28 @@ agent_app = AgentApp('/path/to/your/agents.yaml')
 agent_app.run(host='0.0.0.0', port=5000, debug=True)
 ```
 
+### 4. Using Docker
+
+The project includes Docker support for easy deployment:
+
+```bash
+# Build the Docker image
+make docker-build
+
+# Run the Docker container
+make docker-run
+
+# For debugging with an interactive shell
+make docker-debug
+```
+
+When running with Docker, environment variables from your `.env` file are automatically passed to the container. Additional environment variables can be passed at runtime:
+
+```bash
+# Pass specific environment variables to the Docker container
+LOG_LEVEL=DEBUG make docker-run
+```
+
 ## API Endpoints
 
 Once the server is running, you can interact with your agent through the following endpoints:
@@ -271,14 +382,48 @@ checkpointer:
   collection_name: checkpoints
 ```
 
+## Project Structure
+
+The MAAP Agent Builder is organized into several modules:
+
+```
+mdb_agent_builder/
+├── agents/            # Agent implementations (React, ReflexionAgent, etc.)
+├── config/            # Configuration loading and processing
+├── embeddings/        # Embedding model implementations
+├── llms/              # LLM provider integrations
+├── tools/             # Tool implementations
+└── utils/             # Utility functions and helpers
+```
+
+### Key Files
+
+- `pyproject.toml`: Defines project metadata, dependencies, and tool configurations
+- `mdb_agent_builder/app.py`: The main Flask application
+- `mdb_agent_builder/cli.py`: Command-line interface
+- `mdb_agent_builder/yaml_loader.py`: YAML configuration processor
+- `mdb_agent_builder/agents.yaml`: Default agent configuration
+
+### Development Workflow
+
+1. Install the package with development dependencies
+2. Make changes to the codebase
+3. Run linting and tests to verify your changes
+4. Build and test with Docker if needed
+
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Missing API Keys**: Ensure all required API keys are set in your environment variables
 2. **Configuration Loading Error**: Check your YAML syntax for errors
+   - Use `make validate-config` to verify your agents.yaml file
 3. **LLM Provider Not Found**: Verify that the LLM provider is supported and correctly configured
 4. **Tool Execution Failed**: Check that tools have all required parameters
+5. **Installation Issues**: If you encounter installation problems:
+   - Ensure you have the latest pip version: `pip install --upgrade pip`
+   - Try installing with verbose output: `pip install -e ".[dev]" -v`
+   - Check for conflicting dependencies in your environment
 
 ### Logging
 
@@ -288,9 +433,73 @@ Adjust the logging level to get more detailed information:
 export LOG_LEVEL=DEBUG
 ```
 
+### Package Development
+
+When developing the package:
+
+```bash
+# Run linting checks
+make lint
+
+# Format code automatically
+make format
+
+# Run tests
+make test
+
+# Clean build artifacts
+make clean
+
+# Build distribution packages
+make build-package
+```
+
+### Agent Development
+
+When developing agents and tools:
+
+```bash
+# Create a new agent configuration
+make create-agent
+
+# Add a new tool to your configuration
+make add-tool
+
+# Validate your configuration
+make validate-config
+
+# Run your agent locally
+make run
+
+# Run in Docker container
+make docker-run
+```
+
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Here's how you can contribute to the project:
+
+1. **Fork the repository** and clone it locally
+2. **Create a new branch** for your feature or bugfix
+3. **Make your changes** and ensure tests pass
+4. **Run linting** to ensure code quality: `make lint`
+5. **Add tests** for new functionality
+6. **Submit a pull request** with a clear description of your changes
+
+### Development Guidelines
+
+- Follow PEP 8 style guidelines
+- Write docstrings for functions and classes
+- Add type hints to new code
+- Ensure test coverage for new features
+
+### Testing
+
+Run the test suite with:
+
+```bash
+make test
+```
 
 ## License
 
