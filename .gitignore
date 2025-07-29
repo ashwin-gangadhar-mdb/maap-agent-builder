@@ -71,3 +71,4 @@ htmlcov/
 .mypy_cache/
 
 *.ipynb
+streamlit_app.py
