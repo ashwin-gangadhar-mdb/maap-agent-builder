@@ -10,15 +10,16 @@ MAAP Agent Builder is a modular framework that allows you to configure and deplo
 - **Diverse LLM Providers**: Integration with Anthropic, Bedrock, Fireworks, Together AI, Cohere, Azure, Ollama, and more
 - **Embedding Model Support**: Bedrock, SageMaker, VertexAI, Azure, Together, Fireworks, Cohere, VoyageAI, Ollama, and HuggingFace
 - **Tool Integration**: Easy-to-configure tools for extending agent capabilities
-- **Stateful Conversations**: Support for conversation history and checkpointing
+- **Thread-Based Conversations**: Support for multiple concurrent threads with independent conversation histories
+- **Stateful Sessions**: Conversation history and checkpointing mechanisms
 - **Web API**: Built-in Flask server for easy deployment and interaction
 
 ## Quick Start
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mongo-agent-builder.git
-cd mongo-agent-builder
+git clone https://github.com/yourusername/maap-agent-builder.git
+cd maap-agent-builder
 
 # Set up environment and install
 make setup-env
@@ -40,8 +41,8 @@ make run
 Clone the repository and install the required dependencies:
 
 ```bash
-git clone https://github.com/yourusername/mongo-agent-builder.git
-cd mongo-agent-builder
+git clone https://github.com/yourusername/maap-agent-builder.git
+cd maap-agent-builder
 pip install -e .
 ```
 
@@ -56,6 +57,7 @@ Alternatively, use the provided Makefile:
 ```bash
 make install      # For regular installation
 make dev          # For development installation
+make verify       # Verify your installation is working correctly
 ```
 
 ### Project Structure
@@ -196,7 +198,153 @@ make create-agent  # You'll be prompted for agent name, type, LLM provider, and 
 make add-tool  # You'll be prompted for tool name, type, and description
 ```
 
-## Agent Types
+## API Usage
+
+The MAAP Agent Builder provides a REST API for interacting with your agents. Here are the main endpoints:
+
+### Chat Endpoint
+
+```
+POST /chat
+```
+
+Request body:
+
+```json
+{
+  "message": "Your user message here",
+  "config": {
+    "thread_id": "optional-thread-id"  // If not provided, a new thread will be created
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "response": "Agent's response",
+  "history": [
+    ["user", "Your user message here"],
+    ["assistant", "Agent's response"]
+  ],
+  "thread_id": "thread-id"  // Use this ID to continue the conversation
+}
+```
+
+### Reset Conversation History
+
+```
+POST /reset
+```
+
+Request body:
+
+```json
+{
+  "thread_id": "thread-id"  // Optional. If not provided, all threads will be reset
+}
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "message": "Chat history reset for thread thread-id"
+}
+```
+
+### List Active Threads
+
+```
+GET /threads
+```
+
+Response:
+
+```json
+{
+  "status": "success",
+  "threads": ["thread-id-1", "thread-id-2"],
+  "count": 2
+}
+```
+
+### Health Check
+
+```
+GET /health
+```
+
+Response:
+
+```json
+{
+  "status": "healthy",
+  "agent_loaded": true
+}
+```
+
+## Thread-Based Conversation Management
+
+MAAP Agent Builder uses thread-based conversation history to support multiple concurrent conversations:
+
+- Each conversation is assigned a unique `thread_id`
+- You can specify your own `thread_id` or let the system generate one
+- The conversation history is maintained separately for each thread
+- You can reset a specific thread or all threads using the `/reset` endpoint
+- Thread IDs can be used to implement multi-user support or to separate different conversation contexts
+
+## Command-Line Interface
+
+MAAP Agent Builder provides a CLI for easy server management:
+
+```bash
+# Start the server with default settings
+agent-builder serve --config config/agents.yaml
+
+# Start with custom host and port
+agent-builder serve --config config/agents.yaml --host 127.0.0.1 --port 8000
+
+# Run in debug mode with verbose logging
+agent-builder serve --config config/agents.yaml --debug --log-level DEBUG
+
+# Load environment variables from a specific file
+agent-builder serve --config config/agents.yaml --env-file .env.production
+```
+
+You can also use the provided Makefile target:
+
+```bash
+make run  # Uses the default configuration at config/agents.yaml
+```
+
+## Docker Support
+
+You can run MAAP Agent Builder in Docker for easy deployment:
+
+```bash
+# Build the Docker image
+make docker-build
+
+# Run the Docker container
+make docker-run
+```
+
+## Docker Support
+
+You can run MAAP Agent Builder in Docker for easy deployment:
+
+```bash
+# Build the Docker image
+make docker-build
+
+# Run the Docker container
+make docker-run
+```
+
+The Docker container mounts your local configuration files, logs, and prompts directories, so you can modify them without rebuilding the image.
 
 MAAP Agent Builder supports several agent types, each with different capabilities:
 
@@ -477,7 +625,11 @@ make docker-run
 
 ## Contributing
 
-Contributions are welcome! Here's how you can contribute to the project:
+Contributions to MAAP Agent Builder are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
 
 1. **Fork the repository** and clone it locally
 2. **Create a new branch** for your feature or bugfix
