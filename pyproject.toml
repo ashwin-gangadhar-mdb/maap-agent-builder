@@ -3,13 +3,13 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mdb_agent_builder"
+name = "agent_builder"
 version = "0.1.0"
 description = "MAAP Agent Builder"
 authors = [
     {name = "MongoDB", email = "info@mongodb.com"}
 ]
-readme = "agent_builder/README.md"
+readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -96,10 +96,10 @@ dev = [
 "Bug Tracker" = "https://github.com/mongodb/maap-agent-builder/issues"
 
 [project.scripts]
-maap-agent = "mdb_agent_builder.cli:main"
+agent-builder = "agent_builder.cli:main"
 
 [tool.setuptools]
-packages = ["mdb_agent_builder"]
+packages = ["agent_builder"]
 
 [tool.black]
 line-length = 88
@@ -131,4 +131,4 @@ select = ["E", "F", "B", "I"]
 ignore = []
 
 [tool.setuptools.package-data]
-mdb_agent_builder = ["**/*.yaml", "**/*.txt"]
+agent_builder = ["**/*.yaml", "**/*.txt"]

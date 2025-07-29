@@ -21,14 +21,12 @@ RUN if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3 /usr/bin/python; fi
 # Create a non-root user to run the application
 RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
 
-# Copy requirements and install dependencies
-COPY requirements.txt .
-COPY setup.py .
-COPY __init__.py .
+# Copy pyproject.toml and install dependencies
+COPY pyproject.toml .
+COPY README.md .
 
 # Install the package in development mode
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install -e .
+RUN pip install --no-cache-dir -e .
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -37,11 +35,20 @@ ENV AGENT_CONFIG_PATH=/app/config/agents.yaml
 ENV LOG_LEVEL=INFO
 
 # Create directories for configuration and logs and set proper permissions
-RUN mkdir -p /app/config /app/logs && \
+RUN mkdir -p /app/config /app/logs /app/prompts && \
     chown -R appuser:appuser /app
 
 # Copy the rest of the application
-COPY . .
+COPY agent_builder/ /app/agent_builder/
+COPY prompts/ /app/prompts/
+
+# Create config directory if it doesn't exist
+RUN mkdir -p /app/config /app/logs
+
+# Copy default config files if available
+COPY config/agents.yaml /app/config/ 2>/dev/null || true
+
+# Set proper permissions
 RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
@@ -51,4 +58,4 @@ USER appuser
 EXPOSE 5000
 
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--pythonpath", "/app", "agent_builder.wsgi:application"]
+CMD ["python", "-m", "agent_builder.cli", "serve", "--config", "/app/config/agents.yaml", "--host", "0.0.0.0", "--port", "5000"]

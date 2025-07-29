@@ -268,7 +268,7 @@ There are several ways to run the MAAP Agent Builder locally:
 export AGENT_CONFIG_PATH=/path/to/your/agents.yaml
 
 # Run the server
-python -m mdb_agent_builder.cli serve --config /path/to/your/agents.yaml --port 5000
+python -m agent_builder.cli serve --config /path/to/your/agents.yaml --port 5000
 ```
 
 ### 2. Using WSGI
@@ -278,13 +278,13 @@ python -m mdb_agent_builder.cli serve --config /path/to/your/agents.yaml --port 
 export AGENT_CONFIG_PATH=/path/to/your/agents.yaml
 
 # Run with Gunicorn (recommended for production)
-gunicorn -b 0.0.0.0:5000 mdb_agent_builder.wsgi:application
+gunicorn -b 0.0.0.0:5000 agent_builder.wsgi:application
 ```
 
 ### 3. Using Python Directly
 
 ```python
-from mdb_agent_builder.app import AgentApp
+from agent_builder.app import AgentApp
 
 # Create the agent app with your configuration
 agent_app = AgentApp('/path/to/your/agents.yaml')
@@ -387,7 +387,7 @@ checkpointer:
 The MAAP Agent Builder is organized into several modules:
 
 ```
-mdb_agent_builder/
+agent_builder/
 ├── agents/            # Agent implementations (React, ReflexionAgent, etc.)
 ├── config/            # Configuration loading and processing
 ├── embeddings/        # Embedding model implementations
@@ -399,10 +399,10 @@ mdb_agent_builder/
 ### Key Files
 
 - `pyproject.toml`: Defines project metadata, dependencies, and tool configurations
-- `mdb_agent_builder/app.py`: The main Flask application
-- `mdb_agent_builder/cli.py`: Command-line interface
-- `mdb_agent_builder/yaml_loader.py`: YAML configuration processor
-- `mdb_agent_builder/agents.yaml`: Default agent configuration
+- `agent_builder/app.py`: The main Flask application
+- `agent_builder/cli.py`: Command-line interface
+- `agent_builder/yaml_loader.py`: YAML configuration processor
+- `agent_builder/agents.yaml`: Default agent configuration
 
 ### Development Workflow
 

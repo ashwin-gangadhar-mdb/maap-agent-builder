@@ -1,10 +1,12 @@
 
 # Configure the embedding model
 embeddings:
- - name: all_mpnet_v2
-   provider: huggingface
-   model_name: sentence-transformers/all-mpnet-base-v2
-   normalize: true
+ - name: voyage_embeddings
+   provider: voyageai
+   model_name: voyage-3.5-lite
+   additional_kwargs:
+    output_dimension: 512
+
 
 # Configure the language model
 llms:
@@ -17,21 +19,36 @@ llms:
     additional_kwargs:
       top_p: 0.9
       top_k: 50
+  - name: claude-3.5
+    provider: bedrock
+    model_name: anthropic.claude-3-5-sonnet-20240620-v1:0
+    temperature: 0.1
+    max_tokens: 2048
+    additional_kwargs:
+      top_k: 50
+      top_p: 0.9
 
 # Configure agent tools
 tools:
-  - name: product_recommender
-    tool_type: vector_search
-    description: Searches for relevant documents in the vector store
+  - name: product_availability
+    tool_type: nl_to_mql
+    description: Checks product availability of the product brand in the MongoDB database
     connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
-    namespace: amazon.products
-    embedding_model: all_mpnet_v2  # Reference to the embedding model defined above
+    namespace: dr_reddys.product_details_availability
+    llm: claude-3.5
+  - name: product_information
+    tool_type: vector_search
+    description: Searches for relevant documents in the vector store to help with FAQ on dr reddys product information
+    connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
+    namespace: dr_reddys.product_info
+    embedding_model: voyage_embeddings  # Reference to the embedding model defined above
     additional_kwargs:
-      index_name: default
-      embedding_field: embedding
-      text_field: text
-      top_k: 5
+      index_name: vector_index
+      top_k: 3
       min_score: 0.7
+
+
+
       
   # - name: mdb-mcp-toolkit
   #   tool_type: mdb_mcp_toolkit
@@ -49,7 +66,7 @@ tools:
 # Configure checkpointing
 checkpointer:
   connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
-  db_name: agent_state
+  db_name: dr_reddy_agent_state
   collection_name: checkpoints
   name: rag_agent_checkpointer
 
@@ -57,7 +74,8 @@ checkpointer:
 agent:
   name: rag_react_agent
   agent_type: react
-  llm: fireworks_llm_maverick  # Reference to the LLM defined above
+  llm: claude-3.5  # Reference to the LLM defined above
   tools:
-    - product_recommender  # Reference to the tool defined above
-  system_prompt_path: /Users/ashwin.gangadhar/projects/maap-agent-builder/mdb_agent_builder/prompts/rag_system_prompt.txt
+    - product_information  # Reference to the tool defined above
+    - product_availability  # Reference to the tool defined above
+  system_prompt_path: ./prompts/rag_system_prompt.txt

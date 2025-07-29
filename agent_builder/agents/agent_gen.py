@@ -29,11 +29,11 @@ class AgentFactory:
     
     # Map agent types to their creator function modules and names
     _AGENT_CREATORS: Dict[AgentType, tuple[str, str]] = {
-        AgentType.TOOL_CALL: ("mdb_agent_builder.agents.agent_gen", "create_react_agent"),
-        AgentType.REACT: ("mdb_agent_builder.agents.agent_gen", "create_react_agent"),
-        AgentType.REFLECT: ("mdb_agent_builder.agents.reflection", "create_basic_reflection_agent"),
-        AgentType.PLAN_EXECUTE_REPLAN: ("mdb_agent_builder.agents.plan_execute_replan", "create_plan_execute_replan_agent"),
-        AgentType.LONG_TERM_MEMORY: ("mdb_agent_builder.agents.long_term_memory", "create_long_term_memory_agent"),
+        AgentType.TOOL_CALL: ("agent_builder.agents.agent_gen", "create_react_agent"),
+        AgentType.REACT: ("agent_builder.agents.agent_gen", "create_react_agent"),
+        AgentType.REFLECT: ("agent_builder.agents.reflection", "create_basic_reflection_agent"),
+        AgentType.PLAN_EXECUTE_REPLAN: ("agent_builder.agents.plan_execute_replan", "create_plan_execute_replan_agent"),
+        AgentType.LONG_TERM_MEMORY: ("agent_builder.agents.long_term_memory", "create_long_term_memory_agent"),
     }
     
     @classmethod

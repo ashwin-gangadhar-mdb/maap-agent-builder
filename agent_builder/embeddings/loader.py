@@ -157,9 +157,11 @@ def load_embedding_model(config: EmbeddingConfig) -> Embeddings:
     # Add dimensions if provided and supported by the provider
     if config.dimensions:
         # Currently, only these providers support explicit dimension specification
-        dimension_supporting_providers = ["voyageai", "cohere", "huggingface"]
+        dimension_supporting_providers = ["cohere", "huggingface"]
         if provider in dimension_supporting_providers:
             kwargs["dimensions"] = config.dimensions
+        elif provider == "voyageai":
+            kwargs["output_dimension"] = config.dimensions
         else:
             logger.warning(f"Provider {provider} doesn't support explicit dimension specification. Ignoring dimensions={config.dimensions}")
     

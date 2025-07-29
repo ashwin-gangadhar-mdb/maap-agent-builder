@@ -60,4 +60,4 @@ agent:
   llm: fireworks_llm_maverick  # Reference to the LLM defined above
   tools:
     - product_recommender  # Reference to the tool defined above
-  system_prompt_path: /Users/ashwin.gangadhar/projects/maap-agent-builder/mdb_agent_builder/prompts/rag_system_prompt.txt
+  system_prompt_path: ./prompts/rag_system_prompt.txt

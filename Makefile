@@ -1,4 +1,4 @@
-.PHONY: clean install dev test lint format docker-build docker-run docker-debug setup-env create-config create-agent validate-config add-tool run serve build-package help
+.PHONY: clean install dev test lint format docker-build docker-run docker-debug setup-env create-config create-agent validate-config add-tool run serve build-package help verify reinstall
 
 # Project variables
 PROJECT_NAME := maap-agent-builder
@@ -29,6 +29,8 @@ help:
 	@echo "  make docker-debug    Start Docker container in interactive mode for debugging"
 	@echo "  make run             Run the agent server using local configuration"
 	@echo "  make serve           Alias for 'make run'"
+	@echo "  make verify          Verify the installation and configuration"
+	@echo "  make reinstall       Reinstall the package after name changes"
 
 # Setup the environment and install dependencies
 setup-env:
@@ -36,10 +38,21 @@ setup-env:
 	$(PYTHON) -m venv .venv
 	@echo "Virtual environment created. Activate it with: source .venv/bin/activate"
 	@echo "Then run: make install"
+	@if [ ! -f .env ]; then \
+		echo "Creating .env.example file..."; \
+		if [ -f .env.example ]; then \
+			echo ".env.example already exists"; \
+		else \
+			cp -n .env.example .env 2>/dev/null || \
+			echo "Warning: Could not create .env file from example"; \
+		fi; \
+		echo "Copy .env.example to .env and edit with your settings"; \
+	fi
 
 # Install the package in development mode
 install:
 	@echo "Installing package in development mode..."
+	$(PIP) install --upgrade pip setuptools wheel build
 	$(PIP) install -e ".[dev]"
 	@echo "Installation complete."
 
@@ -54,14 +67,18 @@ create-config:
 	@echo "Creating configuration directories..."
 	mkdir -p $(CONFIG_DIR) $(LOGS_DIR) prompts
 	@if [ ! -f $(CONFIG_PATH) ]; then \
-		cp mdb_agent_builder/agents.yaml $(CONFIG_DIR)/; \
+		cp -n agent_builder/agents.yaml $(CONFIG_DIR)/ 2>/dev/null || \
+		cp -n agent_builder/agents.yaml $(CONFIG_DIR)/ 2>/dev/null || \
+		echo "Warning: Could not find default agents.yaml template"; \
 		echo "Default configuration copied to $(CONFIG_PATH)"; \
 	else \
 		echo "Configuration file already exists at $(CONFIG_PATH)"; \
 	fi
 	@echo "Creating sample system prompt..."
 	@if [ ! -f prompts/rag_system_prompt.txt ]; then \
-		echo "You are a helpful, respectful and honest assistant. You are provided with a set of tools to help you answer the user's question.\n\nYou must think step-by-step and use the tools in order to provide accurate and relevant responses.\n\nAlways acknowledge and disclose when you're using information retrieved from tools." > prompts/rag_system_prompt.txt; \
+		cp -n agent_builder/prompts/rag_system_prompt.txt prompts/ 2>/dev/null || \
+		cp -n agent_builder/prompts/rag_system_prompt.txt prompts/ 2>/dev/null || \
+		echo "You are an advanced AI assistant with tool-calling capabilities designed to provide accurate and helpful responses. You have access to various tools that you can use when appropriate.\n\nWhen responding to queries:\n\n1. DETERMINE if you need to use tools to answer accurately.\n2. CHOOSE the appropriate tool for the task.\n3. CALL the tool with clear, specific inputs.\n4. ANALYZE the tool's response carefully.\n5. FORMULATE a comprehensive answer based on the tool's output.\n\nDo not make up information. If you don't know the answer or can't find relevant information using the tools, acknowledge that.\n\nThink step-by-step when solving complex problems." > prompts/rag_system_prompt.txt; \
 		echo "Sample system prompt created at prompts/rag_system_prompt.txt"; \
 	else \
 		echo "System prompt already exists at prompts/rag_system_prompt.txt"; \
@@ -70,6 +87,12 @@ create-config:
 # Create a new agent configuration template
 create-agent:
 	@echo "Creating new agent configuration template..."
+	@mkdir -p $(CONFIG_DIR) prompts
+	@if [ ! -f prompts/rag_system_prompt.txt ]; then \
+		echo "Creating default system prompt file..."; \
+		cp -n agent_builder/prompts/rag_system_prompt.txt prompts/ 2>/dev/null || \
+		echo "You are an advanced AI assistant with tool-calling capabilities designed to provide accurate and helpful responses. You have access to various tools that you can use when appropriate.\n\nWhen responding to queries:\n\n1. DETERMINE if you need to use tools to answer accurately.\n2. CHOOSE the appropriate tool for the task.\n3. CALL the tool with clear, specific inputs.\n4. ANALYZE the tool's response carefully.\n5. FORMULATE a comprehensive answer based on the tool's output.\n\nDo not make up information. If you don't know the answer or can't find relevant information using the tools, acknowledge that.\n\nThink step-by-step when solving complex problems." > prompts/rag_system_prompt.txt; \
+	fi
 	@read -p "Enter agent name: " agent_name; \
 	read -p "Enter agent type (react/tool_call/reflect/plan_execute_replan/long_term_memory): " agent_type; \
 	read -p "Enter LLM provider (openai/anthropic/fireworks/etc): " llm_provider; \
@@ -77,7 +100,9 @@ create-agent:
 	mkdir -p $(CONFIG_DIR); \
 	if [ -f $(CONFIG_PATH) ]; then \
 		echo "\n# New agent configuration for $$agent_name" >> $(CONFIG_PATH); \
-		echo "llms:" >> $(CONFIG_PATH); \
+		if ! grep -q "^llms:" $(CONFIG_PATH); then \
+			echo "llms:" >> $(CONFIG_PATH); \
+		fi; \
 		echo "  - name: $${agent_name}_llm" >> $(CONFIG_PATH); \
 		echo "    provider: $$llm_provider" >> $(CONFIG_PATH); \
 		echo "    model_name: $$model_name" >> $(CONFIG_PATH); \
@@ -107,10 +132,6 @@ create-agent:
 		echo "  tools: []" >> $(CONFIG_PATH); \
 		echo "Created new agent configuration at $(CONFIG_PATH)"; \
 	fi
-	@if [ ! -f prompts/rag_system_prompt.txt ]; then \
-		mkdir -p prompts; \
-		echo "You are a helpful, respectful and honest assistant. You are provided with a set of tools to help you answer the user's question.\n\nYou must think step-by-step and use the tools in order to provide accurate and relevant responses.\n\nAlways acknowledge and disclose when you're using information retrieved from tools." > prompts/rag_system_prompt.txt; \
-	fi
 
 # Validate the agents.yaml configuration
 validate-config:
@@ -127,16 +148,16 @@ validate-config:
 # Run linting
 lint:
 	@echo "Running linting checks..."
-	flake8 mdb_agent_builder
-	black --check mdb_agent_builder
-	isort --check-only mdb_agent_builder
-	ruff check mdb_agent_builder
+	flake8 agent_builder
+	black --check agent_builder
+	isort --check-only agent_builder
+	ruff check agent_builder
 
 # Format code
 format:
 	@echo "Formatting code..."
-	black mdb_agent_builder
-	isort mdb_agent_builder
+	black agent_builder
+	isort agent_builder
 	@echo "Code formatted."
 
 # Run tests
@@ -150,6 +171,8 @@ clean:
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg-info
+	rm -rf mdb_agent_builder.egg-info
+	rm -rf agent_builder.egg-info
 	rm -rf .pytest_cache
 	rm -rf .coverage
 	rm -rf htmlcov
@@ -161,7 +184,8 @@ clean:
 # Build package distribution files
 build-package:
 	@echo "Building package distribution files..."
-	$(PYTHON) -m pip install --upgrade build
+	$(PIP) install --upgrade build
+	rm -rf dist/ build/ *.egg-info
 	$(PYTHON) -m build
 	@echo "Package built. Distribution files available in dist/"
 
@@ -174,12 +198,15 @@ docker-build:
 # Run the Docker container
 docker-run:
 	@echo "Running Docker container..."
+	@if [ ! -f .env ]; then \
+		echo "Warning: .env file not found. Environment variables will not be loaded."; \
+		echo "You may want to copy .env.example to .env and configure it."; \
+	fi
 	docker run -p 5000:5000 \
 		-v $(PWD)/$(CONFIG_DIR):/app/config \
 		-v $(PWD)/$(LOGS_DIR):/app/logs \
 		-v $(PWD)/prompts:/app/prompts \
-		--env-file .env \
-		$(foreach env,$(filter-out $@,$(MAKECMDGOALS)),$(if $(findstring =,$(env)),-e $(env),)) \
+		$(if $(wildcard .env),--env-file .env,) \
 		-e PYTHONPATH=/app \
 		-e AGENT_CONFIG_PATH=/app/config/agents.yaml \
 		$(PROJECT_NAME)
@@ -187,21 +214,39 @@ docker-run:
 # Run the agent server
 run:
 	@echo "Running MAAP Agent Builder server..."
+	@if [ ! -f $(CONFIG_PATH) ]; then \
+		echo "Configuration file not found at $(CONFIG_PATH). Creating default configuration..."; \
+		make create-config; \
+	fi
 	export AGENT_CONFIG_PATH=$(CONFIG_PATH) && \
-	python -m mdb_agent_builder.cli serve --config $(CONFIG_PATH) --port 5000
+	python -m agent_builder.cli serve --config $(CONFIG_PATH) --port 5000
 
 # Alias for run
 serve: run
 
+# Verify installation and configuration
+verify:
+	@./verify_installation.sh
+
+# Reinstall the package after name changes
+reinstall: clean
+	@echo "Reinstalling package after name changes..."
+	$(PIP) install --upgrade pip setuptools wheel build
+	$(PIP) install -e ".[dev]"
+	@echo "Package reinstalled."
+
 # Debug the Docker container with a shell
 docker-debug:
 	@echo "Starting Docker container in interactive mode..."
+	@if [ ! -f .env ]; then \
+		echo "Warning: .env file not found. Environment variables will not be loaded."; \
+	fi
 	docker run -it --rm \
 		-p 5000:5000 \
 		-v $(PWD)/$(CONFIG_DIR):/app/config \
 		-v $(PWD)/$(LOGS_DIR):/app/logs \
 		-v $(PWD)/prompts:/app/prompts \
-		--env-file .env \
+		$(if $(wildcard .env),--env-file .env,) \
 		-e PYTHONPATH=/app \
 		-e LOG_LEVEL=DEBUG \
 		-e AGENT_CONFIG_PATH=/app/config/agents.yaml \
@@ -215,10 +260,22 @@ setup: setup-env
 	@echo "Running full setup process..."
 	@echo "NOTE: Please activate the virtual environment with 'source .venv/bin/activate'"
 	@echo "Then run: make install-and-config"
+	@if [ ! -f .env ] && [ -f .env.example ]; then \
+		echo ""; \
+		echo "IMPORTANT: Copy .env.example to .env and edit with your configuration:"; \
+		echo "cp .env.example .env"; \
+	fi
 
 # Install and create config in one step (requires activated venv)
 install-and-config: install create-config
 	@echo "Installation and configuration complete."
+	@if ! command -v agent-builder >/dev/null 2>&1; then \
+		echo ""; \
+		echo "WARNING: agent-builder command not found in PATH."; \
+		echo "Make sure your virtual environment is activated."; \
+	else \
+		echo "agent-builder command is available."; \
+	fi
 
 # Add a tool to an existing agent configuration
 add-tool:
@@ -228,16 +285,23 @@ add-tool:
 		exit 1; \
 	fi; \
 	read -p "Enter tool name: " tool_name; \
-	read -p "Enter tool type (vector_search/web_search/calculator/etc): " tool_type; \
+	read -p "Enter tool type (vector_search/mongodb_toolkit/nl_to_mql/mcp): " tool_type; \
 	read -p "Enter tool description: " tool_description; \
-	echo "\n# New tool configuration for $$tool_name" >> $(CONFIG_PATH); \
-	echo "tools:" >> $(CONFIG_PATH); \
-	echo "  - name: $$tool_name" >> $(CONFIG_PATH); \
-	echo "    tool_type: $$tool_type" >> $(CONFIG_PATH); \
-	echo "    description: \"$$tool_description\"" >> $(CONFIG_PATH); \
+	if grep -q "^tools:" $(CONFIG_PATH); then \
+		echo "\n# New tool configuration for $$tool_name" >> $(CONFIG_PATH); \
+		sed -i.bak '/^tools:/,/^[^[:space:]]/ { /^[^[:space:]]/! { /^$$/! s/$$/ \\/ } }' $(CONFIG_PATH); \
+		sed -i.bak '/^tools:/a\ \ - name: '"$$tool_name"'\n    tool_type: '"$$tool_type"'\n    description: "'"$$tool_description"'"' $(CONFIG_PATH); \
+		rm -f $(CONFIG_PATH).bak; \
+	else \
+		echo "\n# Tool configuration" >> $(CONFIG_PATH); \
+		echo "tools:" >> $(CONFIG_PATH); \
+		echo "  - name: $$tool_name" >> $(CONFIG_PATH); \
+		echo "    tool_type: $$tool_type" >> $(CONFIG_PATH); \
+		echo "    description: \"$$tool_description\"" >> $(CONFIG_PATH); \
+	fi; \
 	echo "" >> $(CONFIG_PATH); \
-	echo "# Update agent to use the new tool" >> $(CONFIG_PATH); \
-	echo "# Add this to your agent tools list:" >> $(CONFIG_PATH); \
+	echo "# Don't forget to add this tool to your agent's tools list:" >> $(CONFIG_PATH); \
+	echo "# Update your agent configuration with:" >> $(CONFIG_PATH); \
 	echo "#   tools:" >> $(CONFIG_PATH); \
 	echo "#     - $$tool_name" >> $(CONFIG_PATH); \
 	echo "Added new tool $$tool_name to $(CONFIG_PATH)"; \

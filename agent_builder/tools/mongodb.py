@@ -132,7 +132,7 @@ class MongoDBTools:
             tool_logger.error("LLM must be provided to create the NL to MQL tool")
             raise ValueError("A language model (llm) must be provided to create the NL to MQL tool.")
         
-        tools = self.get_mdb_toolkit(llm, name=name+"_mdb_toolkit")
+        tools = self.get_mdb_toolkit(llm)
         system_message = MONGODB_AGENT_SYSTEM_PROMPT.format(top_k=self.top_k)
         tool_logger.debug("Creating React agent for NL to MQL conversion")
         agent = create_react_agent(model=llm, tools=tools, prompt=system_message)

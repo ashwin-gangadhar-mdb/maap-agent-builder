@@ -7,7 +7,7 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = f.read().splitlines()
 
 setup(
-    name="mdb_agent_builder",
+    name="agent_builder",
     version="0.1.0",
     author="MAAP Team",
     author_email="info@maapagentbuilder.io",
@@ -27,7 +27,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "mdb-agent=mdb_agent_builder.cli:main",
+            "agent-builder=agent_builder.cli:main",
         ],
     },
     include_package_data=True,
