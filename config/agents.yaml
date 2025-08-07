@@ -12,15 +12,15 @@ embeddings:
 
 # Configure the language model
 llms:
-  - name: fireworks_llm_maverick
-    provider: fireworks
-    model_name: accounts/fireworks/models/llama4-maverick-instruct-basic
-    temperature: 0.1
-    max_tokens: 4000
-    streaming: False
-    additional_kwargs:
-      top_p: 0.9
-      top_k: 50
+  # - name: fireworks_llm_maverick
+  #   provider: fireworks
+  #   model_name: accounts/fireworks/models/llama4-maverick-instruct-basic
+  #   temperature: 0.1
+  #   max_tokens: 4000
+  #   streaming: False
+  #   additional_kwargs:
+  #     top_p: 0.9
+  #     top_k: 50
   - name: claude-3.5
     provider: bedrock
     model_name: anthropic.claude-3-5-sonnet-20240620-v1:0
@@ -49,6 +49,17 @@ tools:
       index_name: vector_index
       top_k: 3
       min_score: 0.7
+  - name: ai-memory
+    tool_type: mcp
+    description: MongoDB MCP Toolkit for advanced data operations
+    servers_config:
+      "ai-memory":
+        url: "http://localhost:8080/mcp"
+        transport: "streamable_http"
+        filter:
+          - store_memory
+          - retrieve_memory
+          - semantic_cache_response
 
 
 
@@ -80,5 +91,6 @@ agent:
   llm: claude-3.5  # Reference to the LLM defined above
   tools:
     - product_information  # Reference to the tool defined above
-    - product_availability  # Reference to the tool defined above
+    - product_availability
+    - ai-memory  # Reference to the tool defined above
   system_prompt_path: ./prompts/rag_system_prompt.txt

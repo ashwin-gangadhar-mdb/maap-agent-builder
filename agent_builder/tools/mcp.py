@@ -1,15 +1,15 @@
 """
 MCP (Model Context Protocol) tools for MDB Agent Builder.
 
-This module provides integration with MCP servers using langchain-mcp-adapters.
+This module provides integration with MCP servers using langchain adapters.
 It supports connecting to MCP servers using various transports (stdio, streamable-http, etc.)
-and loading MCP tools for use with agents.
+and loading MCP tools for use with agents. It handles proper async/await patterns
+to ensure coroutines are properly managed.
 """
 
-import os
-from agent_builder.utils.logger import logger
 import asyncio
-from typing import Dict, Any, List, Optional, Union, Callable
+import traceback
+from typing import Dict, Any, List, Optional, Callable
 
 from agent_builder.utils.logging_config import get_logger
 
@@ -34,23 +34,34 @@ class MCPToolManager:
     Tool manager for Model Context Protocol (MCP) servers.
     
     This class provides functionality to connect to MCP servers and load tools from them.
-    It supports both single-server connections and multi-server setups.
+    It supports both single-server connections and multi-server setups, with proper handling
+    of asynchronous operations to prevent coroutine warnings or errors.
+    
+    The manager handles:
+    - Connection to MCP servers via different transport mechanisms (stdio, HTTP)
+    - Proper async/await handling of operations
+    - Error handling during server connections
+    - Loading and processing of tools from servers
     """
     
     def __init__(self):
-        """Initialize the MCP tool manager."""
-        self.clients = {}
-        self.tools = {}
+        """Initialize the MCP tool manager with empty client and tool dictionaries."""
+        self.clients = {}  # Dictionary of connected clients
+        self.tools = {}    # Dictionary of loaded tools
         
     async def get_tools_from_server(self, 
                               server_name: str, 
                               config: Dict[str, Any]) -> List[Any]:
         """
-        Get tools from a specific MCP server.
+        Get tools from a specific MCP server asynchronously.
+        
+        This coroutine connects to a specified MCP server using the configured transport
+        mechanism (stdio or streamable-http), initializes the connection, and loads
+        all available tools from that server.
         
         Args:
-            server_name: Name of the server
-            config: Server configuration dictionary
+            server_name: Name of the server for identification
+            config: Server configuration dictionary with transport details
             
         Returns:
             List of LangChain tools from the MCP server
@@ -58,45 +69,59 @@ class MCPToolManager:
         Raises:
             ValueError: If the transport is not supported or configuration is invalid
         """
+        # Get the transport type, defaulting to stdio if not specified
         transport = config.get("transport", "stdio").lower()
-        logger.info(f"Loading MCP tools from server '{server_name}' using {transport} transport")
+        logger.info("Loading MCP tools from server '%s' using %s transport", 
+                   server_name, transport)
         
+        # Handle stdio transport type (command-line based MCP server)
         if transport == "stdio":
+            # Validate required configuration
             if not config.get("command"):
-                raise ValueError(f"Server '{server_name}' config must include 'command'")
+                raise ValueError("Server '%s' config must include 'command'", server_name)
             
+            # Get command and arguments
             command = config["command"]
             args = config.get("args", [])
             
-            logger.debug(f"Connecting to MCP server '{server_name}' with command: {command} {' '.join(args)}")
+            logger.debug("Connecting to MCP server '%s' with command: %s %s", 
+                       server_name, command, ' '.join(args))
             
+            # Create stdio client connection
             async with stdio_client({"command": command, "args": args}) as (read, write):
                 async with ClientSession(read, write) as session:
-                    # Initialize the connection
+                    # Initialize the connection to the MCP server
                     await session.initialize()
                     
-                    # Get tools
+                    # Load tools from the connected session
                     tools = await load_mcp_tools(session)
-                    logger.info(f"Loaded {len(tools)} tools from MCP server '{server_name}'")
+                    logger.info("Loaded %d tools from MCP server '%s'", 
+                               len(tools), server_name)
                     return tools
                     
+        # Handle HTTP transport type (web-based MCP server)
         elif transport in ["streamable_http", "streamable-http"]:
+            # Validate required configuration
             if not config.get("url"):
-                raise ValueError(f"Server '{server_name}' config must include 'url'")
+                raise ValueError("Server '%s' config must include 'url'", server_name)
             
+            # Get URL and optional headers
             url = config["url"]
             headers = config.get("headers", {})
             
-            logger.debug(f"Connecting to MCP server '{server_name}' at URL: {url}")
+            logger.debug("Connecting to MCP server '%s' at URL: %s", 
+                       server_name, url)
             
+            # Create HTTP client connection
             async with streamablehttp_client(url, headers=headers) as (read, write, _):
                 async with ClientSession(read, write) as session:
-                    # Initialize the connection
+                    # Initialize the connection to the MCP server
                     await session.initialize()
                     
-                    # Get tools
+                    # Load tools from the connected session
                     tools = await load_mcp_tools(session)
-                    logger.info(f"Loaded {len(tools)} tools from MCP server '{server_name}'")
+                    logger.info("Loaded %d tools from MCP server '%s'", 
+                               len(tools), server_name)
                     return tools
         else:
             raise ValueError(f"Unsupported transport '{transport}' for server '{server_name}'")
@@ -106,30 +131,73 @@ class MCPToolManager:
         """
         Load tools from multiple MCP servers using MultiServerMCPClient.
         
+        This coroutine connects to multiple MCP servers simultaneously
+        using the MultiServerMCPClient, which efficiently manages
+        connections to different servers based on their configurations.
+        
         Args:
             servers_config: Dictionary mapping server names to their configurations
             
         Returns:
             List of LangChain tools from all MCP servers
         """
-        logger.info(f"Loading MCP tools from {len(servers_config)} servers")
+        logger.info("Loading MCP tools from %d servers", len(servers_config))
         
         client = MultiServerMCPClient(servers_config)
         all_tools = await client.get_tools()
         
-        logger.info(f"Loaded a total of {len(all_tools)} tools from all MCP servers")
+        logger.info("Loaded a total of %d tools from all MCP servers", len(all_tools))
         return all_tools
     
     def run_async(self, coro):
-        """Run an async coroutine in a synchronous context."""
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(coro)
+        """
+        Run an async coroutine in a synchronous context with proper error handling.
+        
+        This method ensures that coroutines are properly awaited, handling the event loop
+        management automatically. It also provides proper error handling to avoid
+        uncaught exceptions from asyncio operations.
+        
+        Args:
+            coro: The coroutine object to execute
+            
+        Returns:
+            The result of the coroutine execution, or an empty list if execution fails
+        """
+        try:
+            # Get or create the event loop
+            loop = None
+            created_new_loop = False
+            
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # No event loop exists in current thread
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                created_new_loop = True
+            
+            # Run the coroutine
+            result = loop.run_until_complete(coro)
+            
+            # Close the loop if we created a new one
+            if created_new_loop:
+                loop.close()
+                
+            return result
+        except Exception as e:  # pylint: disable=broad-except
+            # Log any errors that occur during async execution
+            logger.error("Error running async coroutine: %s\n%s", str(e), traceback.format_exc())
+            return []
     
     def get_tools(self, 
                   servers_config: Dict[str, Dict[str, Any]], 
                   server_name: Optional[str] = None) -> List[Any]:
         """
         Synchronous method to get tools from MCP servers.
+        
+        This method handles the loading of tools from either a specific MCP server
+        or from multiple servers. It properly manages coroutines and ensures they are
+        awaited correctly to prevent RuntimeWarnings.
         
         Args:
             servers_config: Dictionary mapping server names to their configurations
@@ -138,20 +206,54 @@ class MCPToolManager:
         Returns:
             List of LangChain tools from the MCP servers
         """
-        if server_name:
-            if server_name not in servers_config:
-                raise ValueError(f"Server '{server_name}' not found in configuration")
+        try:
+            if server_name:
+                if server_name not in servers_config:
+                    logger.warning("Server '%s' not found in configuration", server_name)
+                    return []
+                
+                logger.info("Loading tools from specific server: %s", server_name)
+                try:
+                    # Create the coroutine object first, then pass it to run_async
+                    # This ensures proper handling of the async code
+                    coroutine_object = self.get_tools_from_server(server_name, servers_config[server_name])
+                    tools = self.run_async(coroutine_object)
+                    
+                    # Apply filtering if specified in the config
+                    if "filter" in servers_config[server_name]:
+                        filter_list = servers_config[server_name]["filter"]
+                        tools = list(filter(lambda tool: tool.name in filter_list, tools))
+                    return tools
+                except Exception as e:  # pylint: disable=broad-except
+                    logger.error("Error getting tools from server %s: %s\n%s", 
+                               server_name, str(e), traceback.format_exc())
+                    return []
             
-            logger.info(f"Loading tools from specific server: {server_name}")
-            return self.run_async(self.get_tools_from_server(server_name, servers_config[server_name]))
-        
-        return self.run_async(self.load_tools_from_servers(servers_config))
+            # For multiple servers
+            try:
+                # Create the coroutine object first, then pass it to run_async
+                # This is the key fix to prevent the "coroutine was never awaited" warning
+                coroutine_object = self.load_tools_from_servers(servers_config)
+                return self.run_async(coroutine_object)
+            except Exception as e:  # pylint: disable=broad-except
+                logger.error("Error loading tools from servers: %s\n%s", 
+                           str(e), traceback.format_exc())
+                return []
+                
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error("Unexpected error in get_tools: %s\n%s", 
+                       str(e), traceback.format_exc())
+            return []
 
 
 def get_mcp_tools(servers_config: Dict[str, Dict[str, Any]], 
                   server_name: Optional[str] = None) -> List[Any]:
     """
     Get tools from MCP servers.
+    
+    This is the main entry point for loading tools from MCP servers.
+    It handles the creation and management of the MCPToolManager and
+    provides error handling for the tool loading process.
     
     Args:
         servers_config: Dictionary mapping server names to their configurations
@@ -177,13 +279,32 @@ def get_mcp_tools(servers_config: Dict[str, Dict[str, Any]],
         tools = get_mcp_tools(servers)
         ```
     """
-    manager = MCPToolManager()
-    return manager.get_tools(servers_config, server_name)
+    try:
+        # Create a tool manager instance
+        manager = MCPToolManager()
+        
+        try:
+            # Get tools using the manager
+            return manager.get_tools(servers_config, server_name)
+        except Exception as e:  # pylint: disable=broad-except
+            # Handle errors in the tool loading process
+            logger.error("Error getting tools from server %s: %s\n%s", 
+                       server_name or "multiple", str(e), traceback.format_exc())
+            return []
+    
+    except Exception as e:  # pylint: disable=broad-except
+        # Handle errors in the manager creation or other unexpected issues
+        logger.error("Fatal error in get_mcp_tools: %s\n%s", 
+                   str(e), traceback.format_exc())
+        return []
 
 
 def convert_langchain_tool_to_mcp(langchain_tool) -> Any:
     """
     Convert a LangChain tool to an MCP-compatible tool.
+    
+    This utility function takes a standard LangChain tool and converts it
+    to an MCP-compatible format that can be used with MCP servers.
     
     Args:
         langchain_tool: A LangChain tool to convert

@@ -1,18 +1,25 @@
-from flask import Flask, request, jsonify, session
+"""
+Flask application for MAAP Agent Builder.
+
+This module provides the main web application for the MAAP Agent Builder,
+handling agent initialization, request routing, and chat history management.
+"""
+
 import os
 import uuid
-from agent_builder.utils.logger import logger
 from typing import Dict, Any, Optional
+
+from flask import Flask, request, jsonify, session
 from dotenv import load_dotenv
 
+from agent_builder.yaml_loader import load_application
+from agent_builder.utils.logging_config import get_logger
+
+# Load environment variables from .env file if present
 load_dotenv()
 
-# Fix imports to use local imports instead of package imports
-from agent_builder.yaml_loader import load_application
-# from agent_builder.utils.logging_config import get_logger
-
 # Initialize logger
-# logger = get_logger(__name__)
+logger = get_logger(__name__)
 
 class AgentApp:
     """
@@ -44,7 +51,7 @@ class AgentApp:
     def load_components(self):
         """Load agent and related components from the YAML configuration."""
         try:
-            logger.info(f"Loading application components from {self.config_path}")
+            logger.info("Loading application components from %s", self.config_path)
             self.components = load_application(self.config_path)
 
             if "agent" not in self.components:
@@ -56,9 +63,9 @@ class AgentApp:
                 logger.error("Agent object not properly initialized")
                 raise ValueError("Failed to initialize agent")
 
-            logger.info(f"Agent successfully loaded from {self.config_path}")
+            logger.info("Agent successfully loaded from %s", self.config_path)
         except Exception as e:
-            logger.error(f"Failed to load application components: {str(e)}")
+            logger.error("Failed to load application components: %s", str(e))
             raise
 
     def register_routes(self):
@@ -192,7 +199,7 @@ class AgentApp:
                     # Reset specific thread
                     if thread_id in self.chat_histories:
                         self.chat_histories[thread_id] = []
-                        logger.info(f"Reset chat history for thread {thread_id}")
+                        logger.info("Reset chat history for thread %s", thread_id)
                         return jsonify(
                             {
                                 "status": "success",
@@ -250,7 +257,7 @@ class AgentApp:
 
     def run(self, host: str = "0.0.0.0", port: int = 5000, debug: bool = False):
         """Run the Flask application."""
-        logger.info(f"Starting agent server on {host}:{port}")
+        logger.info("Starting agent server on %s:%s", host, port)
         self.app.run(host=host, port=port, debug=debug)
 
 

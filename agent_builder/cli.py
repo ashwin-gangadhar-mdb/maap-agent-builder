@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-import argparse
-import os
-import sys
-from agent_builder.utils.logger import logger
+"""
+Command Line Interface for MAAP Agent Builder.
 
+This module provides a command-line interface to the MAAP Agent Builder,
+allowing users to start the server with configuration options.
+"""
+
+import argparse
+import sys
 from agent_builder.app import AgentApp
 from agent_builder.utils.logging_config import get_logger, configure_logging
 
@@ -40,15 +44,15 @@ def main():
     
     if args.command == "serve":
         try:
-            logger.info(f"Starting agent server with configuration: {args.config}")
+            logger.info("Starting agent server with configuration: %s", args.config)
             if args.env_file:
                 from dotenv import load_dotenv
                 load_dotenv(args.env_file)
-                logger.info(f"Loaded environment variables from {args.env_file}")
+                logger.info("Loaded environment variables from %s", args.env_file)
             agent_app = AgentApp(args.config)
             agent_app.run(host=args.host, port=args.port, debug=args.debug)
         except Exception as e:
-            logger.exception(f"Failed to start server: {str(e)}")
+            logger.exception("Failed to start server: %s", str(e))
             return 1
     
     return 0

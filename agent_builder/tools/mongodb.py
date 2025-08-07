@@ -1,23 +1,31 @@
+"""
+MongoDB tools for MAAP Agent Builder.
+
+This module provides integration with MongoDB Atlas for vector search, 
+full text search, and natural language to MQL query conversion.
+It enables the agent to interact with MongoDB databases efficiently.
+"""
+
+import json
+import certifi
+from typing import List, Optional, Union, Any, Dict
+
+from pymongo import MongoClient
+from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool, ToolException
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.embeddings import Embeddings
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_mongodb.retrievers import MongoDBAtlasFullTextSearchRetriever
 from langchain_mongodb.agent_toolkit import (
     MongoDBDatabase, MongoDBDatabaseToolkit, MONGODB_AGENT_SYSTEM_PROMPT
 )
-from typing import List, Optional, Union, Any, Dict, Tuple
-from langgraph.prebuilt import create_react_agent
-from pymongo import MongoClient
-import certifi
-from agent_builder.utils.logger import logger
+
 from agent_builder.utils.logger import AgentLogger
-from langchain_core.prompts import ChatPromptTemplate
-import json
-
-
-from langchain_core.embeddings import Embeddings
+from agent_builder.utils.logging_config import get_logger
 
 # Create module-level logger
-# logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class MongoDBTools:
     """
@@ -42,7 +50,7 @@ class MongoDBTools:
     ):
         # Create class logger with appropriate name
         self.logger = AgentLogger(name=f"{__name__}.{self.__class__.__name__}").get_logger()
-        self.logger.info(f"Initializing MongoDB tools for namespace: {namespace}")
+        self.logger.info("Initializing MongoDB tools for namespace: %s", namespace)
         self.name = name
         self.top_k = top_k
         self.connection_str = connection_str

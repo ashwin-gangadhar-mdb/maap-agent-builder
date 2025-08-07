@@ -1,10 +1,19 @@
-from enum import Enum
-from typing import Any, Callable, Dict, Type, TypeVar, cast
-from agent_builder.utils.logger import logger
-from langgraph.prebuilt import create_react_agent
+"""
+Agent generator module for creating various types of agents.
 
-# # Create a module-level logger
-# logger = logging.getLogger(__name__)
+This module provides factory functions to create different types of agents
+based on their functionality and architecture. It supports lazy loading
+of agent modules to avoid circular dependencies.
+"""
+
+from enum import Enum
+from typing import Any, Dict, TypeVar, cast
+
+from agent_builder.utils.logging_config import get_logger
+from langgraph.prebuilt import create_react_agent # type:ignore
+
+# Create a module-level logger
+logger = get_logger(__name__)
 
 AgentReturnType = TypeVar('AgentReturnType')
 
@@ -56,32 +65,32 @@ class AgentFactory:
         agent_name = kwargs.get("name", f"{agent_type.value}_agent")
         kwargs["name"] = agent_name
         
-        logger.info(f"Creating agent of type {agent_type.value} with name '{agent_name}'")
+        logger.info("Creating agent of type %s with name '%s'", agent_type.value, agent_name)
         
         if agent_type not in cls._AGENT_CREATORS:
             available_types = AgentType.get_available_types()
-            logger.error(f"Unknown agent type: {agent_type}. Available types: {available_types}")
+            logger.error("Unknown agent type: %s. Available types: %s", agent_type, available_types)
             raise ValueError(f"Unknown agent type: {agent_type}. Available types: {available_types}")
         
         try:
             module_path, function_name = cls._AGENT_CREATORS[agent_type]
-            logger.debug(f"Importing {function_name} from {module_path}")
+            logger.debug("Importing %s from %s", function_name, module_path)
             
             # Lazily import the module only when needed
             module = __import__(module_path, fromlist=[function_name])
             creator_func = getattr(module, function_name)
             
-            logger.info(f"Successfully created agent {agent_name} of type {agent_type.value}")
+            logger.info("Successfully created agent %s of type %s", agent_name, agent_type.value)
             return cast(AgentReturnType, creator_func(**kwargs))
         except ImportError as e:
-            logger.exception(f"Failed to import agent module for {agent_type}")
-            raise ImportError(f"Failed to import agent module for {agent_type}: {str(e)}")
+            logger.exception("Failed to import agent module for %s", agent_type)
+            raise ImportError(f"Failed to import agent module for {agent_type}: {str(e)}") from e
         except AttributeError as e:
-            logger.exception(f"Failed to find creator function for {agent_type}")
-            raise ImportError(f"Failed to find creator function for {agent_type}: {str(e)}")
+            logger.exception("Failed to find creator function for %s", agent_type)
+            raise ImportError(f"Failed to find creator function for {agent_type}: {str(e)}") from e
         except Exception as e:
-            logger.exception(f"Error creating agent of type {agent_type}")
-            raise RuntimeError(f"Error creating agent of type {agent_type}: {str(e)}")
+            logger.exception("Error creating agent of type %s", agent_type)
+            raise RuntimeError(f"Error creating agent of type {agent_type}: {str(e)}") from e
     
     @classmethod
     def register_agent_type(cls, agent_type: AgentType, module_path: str, function_name: str) -> None:
@@ -93,7 +102,7 @@ class AgentFactory:
             module_path: The module path where the creator function is defined
             function_name: The name of the creator function
         """
-        logger.info(f"Registering new agent type {agent_type.name} to {module_path}.{function_name}")
+        logger.info("Registering new agent type %s to %s.%s", agent_type.name, module_path, function_name)
         cls._AGENT_CREATORS[agent_type] = (module_path, function_name)
 
 

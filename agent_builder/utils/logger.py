@@ -1,8 +1,12 @@
-# utils/logger.py
+"""
+Logger module for MAAP Agent Builder.
+
+This module provides a centralized logging system for the MAAP Agent Builder,
+supporting both console and file logging with appropriate formatting.
+"""
+
 import logging
 import sys
-from datetime import datetime
-import json
 from pathlib import Path
 
 
@@ -40,8 +44,8 @@ class AgentLogger:
 
             print(f"📝 Logging to {log_dir / 'agent_builder.log'}")
 
-        except Exception as e:
-            self.logger.warning(f"Could not create file handler: {e}")
+        except (IOError, PermissionError) as e:
+            self.logger.warning("Could not create file handler: %s", e)
 
     def get_logger(self):
         """Get the logger instance."""
