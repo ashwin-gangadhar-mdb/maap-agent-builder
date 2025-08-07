@@ -1,7 +1,8 @@
 # Config loader for MAAP Agent Builder
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
 import yaml
 from pydantic import BaseModel
-from typing import Any, Optional, List, Union, Dict, Literal, Tuple
 
 
 class CheckpointerConfig(BaseModel):

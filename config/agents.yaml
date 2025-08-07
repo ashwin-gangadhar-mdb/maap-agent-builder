@@ -60,21 +60,6 @@ tools:
           - store_memory
           - retrieve_memory
           - semantic_cache_response
-
-
-
-      
-  # - name: mdb-mcp-toolkit
-  #   tool_type: mdb_mcp_toolkit
-  #   description: MongoDB MCP Toolkit for advanced data operations
-  #   connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
-  #   namespace: amazon.products
-  #   servers_config:
-  #     "mdb-toolkit":
-  #       "url": "http://localhost:8080/mcp/"
-  #       "transport": "streamable_http"
-  #   additional_kwargs:
-  #     index_name: default
   
 
 # Configure checkpointing
@@ -92,5 +77,5 @@ agent:
   tools:
     - product_information  # Reference to the tool defined above
     - product_availability
-    - ai-memory  # Reference to the tool defined above
+    - ai-memory  
   system_prompt_path: ./prompts/rag_system_prompt.txt

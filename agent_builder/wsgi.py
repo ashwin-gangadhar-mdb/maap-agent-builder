@@ -1,7 +1,8 @@
 import os
+
 from agent_builder.app import create_app
-from agent_builder.utils.logging_config import configure_logging
 from agent_builder.utils.logger import logger
+from agent_builder.utils.logging_config import configure_logging
 
 # Configure logging
 log_level = os.environ.get("LOG_LEVEL", "INFO").upper()

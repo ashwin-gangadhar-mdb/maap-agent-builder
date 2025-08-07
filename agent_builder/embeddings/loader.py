@@ -1,24 +1,23 @@
-from typing import Dict, Any, Optional, Union, List
 import os
-from agent_builder.utils.logger import logger
 from dataclasses import dataclass
-
-from langchain_core.embeddings import Embeddings
+from typing import Any, Dict, List, Optional, Union
 
 # Import supported embedding providers
 from langchain_aws import BedrockEmbeddings
 from langchain_community.embeddings import (
-    SagemakerEndpointEmbeddings,
-    OllamaEmbeddings,
     CohereEmbeddings,
-    VertexAIEmbeddings
+    OllamaEmbeddings,
+    SagemakerEndpointEmbeddings,
+    VertexAIEmbeddings,
 )
-from langchain_openai import AzureOpenAIEmbeddings
-from langchain_voyageai import VoyageAIEmbeddings
+from langchain_core.embeddings import Embeddings
 from langchain_fireworks import FireworksEmbeddings
-from langchain_together import TogetherEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings
+from langchain_together import TogetherEmbeddings
+from langchain_voyageai import VoyageAIEmbeddings
 
+from agent_builder.utils.logger import logger
 from agent_builder.utils.logging_config import get_logger
 
 """
@@ -30,9 +29,11 @@ including Bedrock, SageMaker, VertexAI, Azure, Together, Fireworks, Cohere, Voya
 # Set up module logger
 logger = get_logger(__name__)
 
+
 @dataclass
 class EmbeddingConfig:
     """Configuration for embedding models."""
+
     name: str
     provider: str
     model_name: str
@@ -40,6 +41,7 @@ class EmbeddingConfig:
     dimensions: Optional[int] = None
     additional_kwargs: Optional[Dict[str, Any]] = None
     api_key: Optional[str] = None
+
 
 # Provider configuration map
 PROVIDER_CONFIG = {
@@ -75,8 +77,8 @@ PROVIDER_CONFIG = {
         "extra_config": {
             "env_var": "AZURE_OPENAI_ENDPOINT",
             "config_key": "azure_endpoint",
-            "error_msg": "Azure endpoint required for Azure OpenAI"
-        }
+            "error_msg": "Azure endpoint required for Azure OpenAI",
+        },
     },
     "together": {
         "class": TogetherEmbeddings,
@@ -112,7 +114,7 @@ PROVIDER_CONFIG = {
         "error_msg": None,
         "uses_api_key": False,
         "model_key": "model",
-        "default_config": {"base_url": "http://localhost:11434"}
+        "default_config": {"base_url": "http://localhost:11434"},
     },
     "huggingface": {
         "class": HuggingFaceEmbeddings,
@@ -120,40 +122,47 @@ PROVIDER_CONFIG = {
         "error_msg": None,
         "uses_api_key": False,
         "model_key": "model_name",
-    }
+    },
 }
+
 
 def load_embedding_model(config: EmbeddingConfig) -> Embeddings:
     """
     Load an embedding model based on the provided configuration.
-    
+
     Args:
         config: EmbeddingConfig containing provider, model name, and other parameters
-        
+
     Returns:
         An initialized Embeddings instance
-        
+
     Raises:
         ValueError: If the provider is not supported or required configuration is missing
     """
     provider = config.provider.lower()
-    logger.info(f"Loading embedding model for provider: {provider}, model: {config.model_name}")
-    
+    logger.info(
+        f"Loading embedding model for provider: {provider}, model: {config.model_name}"
+    )
+
     # Check if provider is supported
     if provider not in PROVIDER_CONFIG:
         available_providers = list(PROVIDER_CONFIG.keys())
-        logger.error(f"Unsupported embedding provider: {provider}. Available providers: {available_providers}")
-        raise ValueError(f"Unsupported embedding provider: {provider}. Available providers: {available_providers}")
-    
+        logger.error(
+            f"Unsupported embedding provider: {provider}. Available providers: {available_providers}"
+        )
+        raise ValueError(
+            f"Unsupported embedding provider: {provider}. Available providers: {available_providers}"
+        )
+
     provider_info = PROVIDER_CONFIG[provider]
-    
+
     # Build common kwargs
     kwargs = {}
-    
+
     # Add model name with the appropriate key
     if provider_info["model_key"]:
         kwargs[provider_info["model_key"]] = config.model_name
-    
+
     # Add dimensions if provided and supported by the provider
     if config.dimensions:
         # Currently, only these providers support explicit dimension specification
@@ -163,76 +172,90 @@ def load_embedding_model(config: EmbeddingConfig) -> Embeddings:
         elif provider == "voyageai":
             kwargs["output_dimension"] = config.dimensions
         else:
-            logger.warning(f"Provider {provider} doesn't support explicit dimension specification. Ignoring dimensions={config.dimensions}")
-    
+            logger.warning(
+                f"Provider {provider} doesn't support explicit dimension specification. Ignoring dimensions={config.dimensions}"
+            )
+
     # Check for required API keys
     if provider_info["env_var"] and provider_info["uses_api_key"]:
         env_var = provider_info["env_var"]
-        
+
         # Use API key from config or environment variable
         api_key = config.api_key or os.environ.get(env_var)
-        
+
         if not api_key:
             logger.error(f"{provider_info['error_msg']}")
             raise ValueError(provider_info["error_msg"])
-        
+
         if provider_info["uses_api_key"]:
             kwargs["api_key"] = api_key
-    
+
     # Handle extra configuration for specific providers
     if provider == "azure" and provider_info.get("extra_config"):
         extra = provider_info["extra_config"]
-        azure_endpoint = config.additional_kwargs.get("azure_endpoint") if config.additional_kwargs else None
-        
+        azure_endpoint = (
+            config.additional_kwargs.get("azure_endpoint")
+            if config.additional_kwargs
+            else None
+        )
+
         if not azure_endpoint and not os.environ.get(extra["env_var"]):
             logger.error(f"{extra['error_msg']}")
             raise ValueError(extra["error_msg"])
-            
+
         kwargs[extra["config_key"]] = azure_endpoint or os.environ.get(extra["env_var"])
-    
+
     # Handle Ollama's special case
     if provider == "ollama":
-        base_url = (config.additional_kwargs or {}).get("base_url", provider_info["default_config"]["base_url"])
+        base_url = (config.additional_kwargs or {}).get(
+            "base_url", provider_info["default_config"]["base_url"]
+        )
         kwargs["base_url"] = base_url
-    
+
     # Handle SageMaker's special case
     if provider == "sagemaker":
         if not config.additional_kwargs:
             logger.error("Additional kwargs required for SageMaker")
             raise ValueError("SageMaker requires additional configuration")
-            
+
         for required_key in provider_info.get("required_config", []):
             if required_key not in config.additional_kwargs:
-                logger.error(f"Missing required configuration for SageMaker: {required_key}")
-                raise ValueError(f"Missing required configuration for SageMaker: {required_key}")
-        
+                logger.error(
+                    f"Missing required configuration for SageMaker: {required_key}"
+                )
+                raise ValueError(
+                    f"Missing required configuration for SageMaker: {required_key}"
+                )
+
         # Apply defaults then override with user settings
         sagemaker_kwargs = provider_info["default_config"].copy()
         sagemaker_kwargs.update(config.additional_kwargs)
-        
+
         # SageMaker embeddings need special handling due to different constructor signature
         return provider_info["class"](
             endpoint_name=sagemaker_kwargs["endpoint_name"],
             region_name=sagemaker_kwargs.get("region_name", "us-east-1"),
             content_handler=sagemaker_kwargs.get("content_handler"),
-            **kwargs
+            **kwargs,
         )
-    
+
     # Some embedding models support normalization
     if hasattr(provider_info["class"], "normalize") and config.normalize:
         kwargs["normalize"] = config.normalize
-    
+
     # Add any additional kwargs
     if config.additional_kwargs:
         for key, value in config.additional_kwargs.items():
             if key not in kwargs:
                 kwargs[key] = value
-    
+
     logger.debug(f"Initializing {provider} embedding model with parameters: {kwargs}")
     return provider_info["class"](**kwargs)
 
 
-def load_embedding_models(configs: Union[EmbeddingConfig, List[EmbeddingConfig]]) -> Dict[str, Embeddings]:
+def load_embedding_models(
+    configs: Union[EmbeddingConfig, List[EmbeddingConfig]],
+) -> Dict[str, Embeddings]:
     """
     Load multiple embedding models based on the provided configurations.
 
