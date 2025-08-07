@@ -2,6 +2,7 @@
 Centralized logging configuration for the MAAP Agent Builder.
 """
 import json
+from agent_builder.utils.logger import logger
 import logging
 import os
 import sys

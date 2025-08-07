@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Any, Callable, Dict, Type, TypeVar, cast
-import logging
+from agent_builder.utils.logger import logger
 from langgraph.prebuilt import create_react_agent
 
-# Create a module-level logger
-logger = logging.getLogger(__name__)
+# # Create a module-level logger
+# logger = logging.getLogger(__name__)
 
 AgentReturnType = TypeVar('AgentReturnType')
 

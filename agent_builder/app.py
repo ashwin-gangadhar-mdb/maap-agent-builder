@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, session
 import os
 import uuid
-import logging
+from agent_builder.utils.logger import logger
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -9,11 +9,10 @@ load_dotenv()
 
 # Fix imports to use local imports instead of package imports
 from agent_builder.yaml_loader import load_application
-from agent_builder.utils.logging_config import get_logger
+# from agent_builder.utils.logging_config import get_logger
 
 # Initialize logger
-logger = get_logger(__name__)
-
+# logger = get_logger(__name__)
 
 class AgentApp:
     """

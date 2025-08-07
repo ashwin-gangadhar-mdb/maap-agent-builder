@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, START, END
 
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.memory import InMemorySaver
-import logging
+from agent_builder.utils.logger import logger
 
 
 
@@ -97,7 +97,7 @@ def create_plan_execute_replan_agent(
         A StateGraph that represents the agent's workflow.
     """
 
-    logger = logging.getLogger(name)
+    # logger = logging.getLogger(name)
     logger.info(f"Creating Plan-Execute-Replan agent: {name}")
 
     # validate all inputs and throw error if any are missing

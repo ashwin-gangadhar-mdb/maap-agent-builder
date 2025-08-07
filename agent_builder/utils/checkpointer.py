@@ -4,7 +4,7 @@ This module provides functionality to create various types of checkpointers,
 including MongoDB for persistent state.
 """
 
-import logging
+from agent_builder.utils.logger import logger
 from typing import Any
 
 from agent_builder.utils.logging_config import get_logger

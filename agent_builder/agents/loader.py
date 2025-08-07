@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, Union, List, Type
 import os
-import logging
+from agent_builder.utils.logger import logger
 from dataclasses import dataclass, field
 
 from langchain_core.language_models import BaseLLM
@@ -16,8 +16,8 @@ This module provides functionality to load different types of agents
 including React, Reflection, Plan-Execute-Replan, and Long-Term Memory agents.
 """
 
-# Set up module logger
-logger = get_logger(__name__)
+# # Set up module logger
+# logger = get_logger(__name__)
 
 @dataclass
 class AgentConfig:

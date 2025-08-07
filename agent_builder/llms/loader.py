@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, Union, Callable, Type, List
 import os
-import logging
+from agent_builder.utils.logger import logger
 from dataclasses import dataclass
 from langchain_core.language_models import BaseLLM
 from langchain_anthropic import ChatAnthropic
@@ -25,7 +25,7 @@ Ollama, and AWS SageMaker.
 """
 
 # Set up module logger
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 @dataclass
 class LLMConfig:

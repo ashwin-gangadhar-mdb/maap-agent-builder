@@ -1,6 +1,6 @@
 import json
 import uuid
-import logging
+from agent_builder.utils.logger import logger
 from typing import List, Literal, Optional
 from time import sleep
 
@@ -41,7 +41,7 @@ def create_long_term_memory_agent(
         name: Name of the agent for logging purposes
     """
 
-    logger = logging.getLogger(name)
+    # logger = logging.getLogger(name)
     logger.info(f"Creating long-term memory agent: {name}")
 
     # validate all inputs and throw error if any are missing

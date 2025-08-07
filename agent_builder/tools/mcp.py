@@ -7,7 +7,7 @@ and loading MCP tools for use with agents.
 """
 
 import os
-import logging
+from agent_builder.utils.logger import logger
 import asyncio
 from typing import Dict, Any, List, Optional, Union, Callable
 

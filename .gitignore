@@ -72,3 +72,5 @@ htmlcov/
 
 *.ipynb
 streamlit_app.py
+*demo*.md
+

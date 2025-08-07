@@ -1,4 +1,4 @@
-import logging
+from agent_builder.utils.logger import logger
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from langgraph.prebuilt import create_react_agent
@@ -43,7 +43,7 @@ def create_basic_reflection_agent(
         response_schema: Optional schema for structuring responses
         name: Name of the agent for logging purposes
     """
-    logger = logging.getLogger(name)
+    # logger = logging.getLogger(name)
     logger.info(f"Creating basic reflection agent: {name}")
 
     # validate all inputs and throw error if any are missing

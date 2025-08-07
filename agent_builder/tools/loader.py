@@ -6,7 +6,7 @@ including MongoDB tools, MCP tools, and other LangChain tools.
 """
 
 from typing import Dict, Any, List, Optional, Union
-import logging
+from agent_builder.utils.logger import logger
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -26,6 +26,7 @@ class ToolType(str, Enum):
     MONGODB_TOOLKIT = "mongodb_toolkit"
     NL_TO_MQL = "nl_to_mql"
     MCP = "mcp"
+    FULL_TEXT_SEARCH = "full_text_search"
 
 @dataclass
 class ToolConfig:
@@ -77,9 +78,11 @@ def load_tool(config: ToolConfig) -> BaseTool:
         
         # Create MongoDB tools instance
         mongodb_tools = MongoDBTools(
+            name=tool_name,
             connection_str=config.connection_str,
             namespace=config.namespace,
-            embedding_model=None  # Not needed for MongoDB toolkit
+            embedding_model=None,  # Not needed for MongoDB toolkit
+            **config.additional_kwargs
         )
         
         # Get MongoDB toolkit tools
@@ -90,9 +93,11 @@ def load_tool(config: ToolConfig) -> BaseTool:
         
         # Create MongoDB tools instance
         mongodb_tools = MongoDBTools(
+            name=tool_name,
             connection_str=config.connection_str,
             namespace=config.namespace,
-            embedding_model=None  # Not needed for NL to MQL
+            embedding_model=None, # Not needed for NL to MQL
+            **config.additional_kwargs
         )
         
         # Get NL to MQL tool
@@ -104,6 +109,21 @@ def load_tool(config: ToolConfig) -> BaseTool:
         # Get MCP tools
         server_name = config.additional_kwargs.get("server_name")
         return get_mcp_tools(config.servers_config, server_name)
+    
+    elif tool_type == ToolType.FULL_TEXT_SEARCH:
+        _check_required_fields(config, ["connection_str", "namespace"], tool_type)
+        
+        # Create MongoDB tools instance
+        mongodb_tools = MongoDBTools(
+            name=tool_name,
+            connection_str=config.connection_str,
+            namespace=config.namespace,
+            embedding_model=None,  # Not needed for full text search
+            **config.additional_kwargs
+        )
+        
+        # Get full text search tool
+        return mongodb_tools.get_full_text_search_tool()
     
     else:
         logger.error(f"Unsupported tool type: {tool_type}")

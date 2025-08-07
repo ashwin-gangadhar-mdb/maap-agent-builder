@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, Union, List
 import os
-import logging
+from agent_builder.utils.logger import logger
 from dataclasses import dataclass
 
 from langchain_core.embeddings import Embeddings

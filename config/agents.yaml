@@ -6,14 +6,16 @@ embeddings:
    model_name: voyage-3.5-lite
    additional_kwargs:
     output_dimension: 512
-
+ - name: bedrock-titan
+   provider: bedrock
+   model_name: amazon.titan-embed-text-v1
 
 # Configure the language model
 llms:
   - name: fireworks_llm_maverick
     provider: fireworks
     model_name: accounts/fireworks/models/llama4-maverick-instruct-basic
-    temperature: 0.7
+    temperature: 0.1
     max_tokens: 4000
     streaming: False
     additional_kwargs:
@@ -22,20 +24,21 @@ llms:
   - name: claude-3.5
     provider: bedrock
     model_name: anthropic.claude-3-5-sonnet-20240620-v1:0
-    temperature: 0.1
-    max_tokens: 2048
-    additional_kwargs:
-      top_k: 50
-      top_p: 0.9
+    temperature: 0.7
+    max_tokens: 4096
+
 
 # Configure agent tools
 tools:
   - name: product_availability
-    tool_type: nl_to_mql
-    description: Checks product availability of the product brand in the MongoDB database
+    tool_type: full_text_search
+    description: Checks product availability of the product in the MongoDB database
     connection_str: ${MONGODB_URI:-mongodb://localhost:27017}
-    namespace: dr_reddys.product_details_availability
-    llm: claude-3.5
+    namespace: dr_reddys.product_inventory
+    additional_kwargs:
+      index_name: full_text_search_index
+      text_field: search_text
+      top_k: 5
   - name: product_information
     tool_type: vector_search
     description: Searches for relevant documents in the vector store to help with FAQ on dr reddys product information
@@ -57,7 +60,7 @@ tools:
   #   namespace: amazon.products
   #   servers_config:
   #     "mdb-toolkit":
-  #       "url": "http://localhost:5000/mcp/"
+  #       "url": "http://localhost:8080/mcp/"
   #       "transport": "streamable_http"
   #   additional_kwargs:
   #     index_name: default

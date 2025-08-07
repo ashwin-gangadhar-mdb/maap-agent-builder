@@ -2,7 +2,7 @@
 import argparse
 import os
 import sys
-import logging
+from agent_builder.utils.logger import logger
 
 from agent_builder.app import AgentApp
 from agent_builder.utils.logging_config import get_logger, configure_logging

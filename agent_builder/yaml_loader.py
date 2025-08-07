@@ -1,7 +1,7 @@
 import yaml
 from pydantic import BaseModel, create_model
 import os
-import logging
+from agent_builder.utils.logger import logger
 import re
 from pipe21 import Map, Pipe
 from typing import Dict, Any, Optional, Union, List
