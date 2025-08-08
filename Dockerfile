@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     python3-venv \
     build-essential \
+    curl \
+    ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,12 +23,8 @@ RUN if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python3 /usr/bin/python; fi
 # Create a non-root user to run the application
 RUN groupadd -r appuser && useradd -r -g appuser -m -d /home/appuser appuser
 
-# Copy pyproject.toml and install dependencies
-COPY pyproject.toml .
-COPY README.md .
-
-# Install the package in development mode
-RUN pip install --no-cache-dir -e .
+# Copy dependency files first (better layer caching)
+COPY pyproject.toml setup.py README.md ./
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -34,21 +32,29 @@ ENV PYTHONUNBUFFERED=1
 ENV AGENT_CONFIG_PATH=/app/config/agents.yaml
 ENV LOG_LEVEL=INFO
 
-# Create directories for configuration and logs and set proper permissions
-RUN mkdir -p /app/config /app/logs /app/prompts && \
-    chown -R appuser:appuser /app
+# Create necessary directories
+RUN mkdir -p /app/config /app/logs /app/prompts
 
-# Copy the rest of the application
+# Copy the application code
 COPY agent_builder/ /app/agent_builder/
 COPY prompts/ /app/prompts/
+COPY config/ /app/config/ 
+COPY startup.sh /app/
 
-# Create config directory if it doesn't exist
-RUN mkdir -p /app/config /app/logs
+# Make startup script executable
+RUN chmod +x /app/startup.sh
 
-# Copy default config files if available
-COPY config/agents.yaml /app/config/ 2>/dev/null || true
+# Install the package in development mode (after code is copied)
+# Use --no-build-isolation to ensure we use the package directly
+# Retry installation up to 3 times in case of network issues
+RUN pip install --no-cache-dir --no-build-isolation -e . || \
+    (sleep 2 && pip install --no-cache-dir --no-build-isolation -e .) || \
+    (sleep 5 && pip install --no-cache-dir --no-build-isolation -e .)
 
-# Set proper permissions
+# Ensure the default config file exists
+RUN touch /app/config/agents.yaml
+
+# Set proper permissions (after all files are copied)
 RUN chown -R appuser:appuser /app
 
 # Switch to non-root user
@@ -57,5 +63,9 @@ USER appuser
 # Expose the port the app runs on
 EXPOSE 5000
 
-# Command to run the application
-CMD ["python", "-m", "agent_builder.cli", "serve", "--config", "/app/config/agents.yaml", "--host", "0.0.0.0", "--port", "5000"]
+# Add healthcheck to verify python process is running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD ps aux | grep "[p]ython -m agent_builder.cli" || exit 1
+
+# Command to run the application with proper error handling
+CMD ["/app/startup.sh"]

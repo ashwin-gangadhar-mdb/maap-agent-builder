@@ -73,4 +73,6 @@ htmlcov/
 *.ipynb
 streamlit_app.py
 *demo*.md
+*dr_reddy_pharma_sales_rep_demo*
+
 

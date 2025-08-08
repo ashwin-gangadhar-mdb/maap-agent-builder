@@ -12,15 +12,6 @@ embeddings:
 
 # Configure the language model
 llms:
-  # - name: fireworks_llm_maverick
-  #   provider: fireworks
-  #   model_name: accounts/fireworks/models/llama4-maverick-instruct-basic
-  #   temperature: 0.1
-  #   max_tokens: 4000
-  #   streaming: False
-  #   additional_kwargs:
-  #     top_p: 0.9
-  #     top_k: 50
   - name: claude-3.5
     provider: bedrock
     model_name: anthropic.claude-3-5-sonnet-20240620-v1:0
